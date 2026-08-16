@@ -35,7 +35,7 @@
 
   <div id="video-container">
     <button id="btn-cerrar">&times;</button>
-    <video id="video-pantalla" playsinline webkit-playsinline loop preload="auto"></video>
+    <video id="video-pantalla" playsinline webkit-playsinline loop preload="auto" crossorigin="anonymous"></video>
   </div>
 
   <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
@@ -56,14 +56,12 @@
     let videoActual = null;
     let flashEncendido = false;
 
-    // LÓGICA DE BODEGAS GITHUB - CONFIGURADO CON SU USUARIO
     const usuarioGitHub = "r-co95"; 
 
     function obtenerRuta(index) {
       const num = index + 1;
       let bodega = "";
       
-      // Asignación automática de bodega según el número de la cita
       if (num <= 25) bodega = "videos-libro-1";
       else if (num <= 50) bodega = "videos-libro-2";
       else if (num <= 75) bodega = "videos-libro-3";
