@@ -348,4 +348,335 @@
           /*
            * Seguridad adicional.
            *
-           * Si GitHub
+           * Si GitHub tarda demasiado en responder,
+           * pasamos al siguiente repositorio.
+           */
+
+          const temporizador = setTimeout(() => {
+
+            if (terminado) return;
+
+            terminado = true;
+
+            limpiarEventos();
+
+            resolve(false);
+
+          }, 8000);
+
+
+          function limpiarEventos() {
+
+            clearTimeout(temporizador);
+
+            video.removeEventListener(
+              'loadeddata',
+              cuandoCarga
+            );
+
+            video.removeEventListener(
+              'error',
+              cuandoFalla
+            );
+
+          }
+
+
+          video.addEventListener(
+            'loadeddata',
+            cuandoCarga,
+            { once: true }
+          );
+
+          video.addEventListener(
+            'error',
+            cuandoFalla,
+            { once: true }
+          );
+
+
+          /*
+           * Intentar cargar el video.
+           */
+
+          video.src = ruta;
+          video.load();
+
+        });
+
+
+        /*
+         * Encontramos la cita.
+         */
+
+        if (encontrado) {
+
+          ubicacionesEncontradas[nombreArchivo] =
+            bodega;
+
+          console.log(
+            `Cita encontrada: ${nombreArchivo} → ${bodega}`
+          );
+
+          return ruta;
+
+        }
+
+      }
+
+
+      /*
+       * No se encontró en ninguno de los cuatro.
+       */
+
+      console.error(
+        `${nombreArchivo} no existe en ninguno de los 4 contenedores.`
+      );
+
+      return null;
+
+    }
+
+
+    /*
+     * ============================================================
+     * CREAR LOS 100 TARGETS
+     * ============================================================
+     */
+
+    for (let i = 0; i < 100; i++) {
+
+      const el = document.createElement('a-entity');
+
+      el.setAttribute(
+        'mindar-image-target',
+        `targetIndex: ${i}`
+      );
+
+
+      /*
+       * ==========================================================
+       * FOTO ENCONTRADA
+       * ==========================================================
+       */
+
+      el.addEventListener('targetFound', async () => {
+
+        const numeroCita = i + 1;
+
+        console.log(
+          `Fotografía detectada: Cita ${numeroCita}`
+        );
+
+
+        /*
+         * Buscar automáticamente la cita
+         * entre los cuatro repositorios.
+         */
+
+        const rutaVideo =
+          await buscarVideo(i);
+
+
+        /*
+         * Si no existe, no hacemos nada.
+         */
+
+        if (!rutaVideo) {
+          return;
+        }
+
+
+        /*
+         * Si es un video diferente,
+         * cargarlo.
+         */
+
+        if (videoActual !== rutaVideo) {
+
+          video.src = rutaVideo;
+
+          videoActual = rutaVideo;
+
+          video.load();
+
+        }
+
+
+        /*
+         * Mostrar video fullscreen.
+         */
+
+        video.muted = false;
+
+        container.style.display = 'block';
+
+
+        /*
+         * Reproducir.
+         *
+         * Si estaba pausado porque la cámara se retiró,
+         * continúa desde donde quedó.
+         */
+
+        video.play().catch(e => {
+
+          console.log(
+            'Error play:',
+            e
+          );
+
+        });
+
+      });
+
+
+      /*
+       * ==========================================================
+       * FOTO PERDIDA
+       * ==========================================================
+       *
+       * NO se reinicia el video.
+       *
+       * Solamente se pausa.
+       *
+       * Al volver a mostrar la fotografía:
+       * continúa desde el mismo punto.
+       */
+
+      el.addEventListener('targetLost', () => {
+
+        if (videoActual) {
+
+          video.pause();
+
+          container.style.display = 'none';
+
+        }
+
+      });
+
+
+      targetsGroup.appendChild(el);
+
+    }
+
+
+    /*
+     * ============================================================
+     * COMENZAR EXPERIENCIA
+     * ============================================================
+     */
+
+    document
+      .getElementById('btn-comenzar')
+      .addEventListener('click', async () => {
+
+        inicio.style.display = 'none';
+
+        btnFlash.style.display = 'flex';
+
+        video.muted = false;
+
+        const mindarSystem =
+          sceneEl.systems['mindar-image-system'];
+
+        await mindarSystem.start();
+
+      });
+
+
+    /*
+     * ============================================================
+     * BOTÓN X
+     * ============================================================
+     *
+     * Reinicia el video y deja nuevamente disponible el escaneo.
+     */
+
+    btnCerrar.addEventListener('click', () => {
+
+      video.pause();
+
+      video.currentTime = 0;
+
+      videoActual = null;
+
+      container.style.display = 'none';
+
+    });
+
+
+    /*
+     * ============================================================
+     * LINTERNA
+     * ============================================================
+     *
+     * ESTA PARTE SE CONSERVA IGUAL QUE TU CÓDIGO FUNCIONAL.
+     */
+
+    btnFlash.addEventListener('click', async () => {
+
+      try {
+
+        const videos =
+          document.querySelectorAll('video');
+
+        let trackCamara = null;
+
+
+        videos.forEach(v => {
+
+          if (
+            v.id !== 'video-pantalla' &&
+            v.srcObject
+          ) {
+
+            trackCamara =
+              v.srcObject.getVideoTracks()[0];
+
+          }
+
+        });
+
+
+        if (
+          trackCamara &&
+          trackCamara.getCapabilities().torch
+        ) {
+
+          flashEncendido =
+            !flashEncendido;
+
+
+          await trackCamara.applyConstraints({
+            advanced: [
+              {
+                torch: flashEncendido
+              }
+            ]
+          });
+
+
+          btnFlash.style.background =
+            flashEncendido
+              ? '#facc15'
+              : 'rgba(0, 0, 0, 0.7)';
+
+        }
+
+      } catch (err) {
+
+        console.log(
+          'Error flash:',
+          err
+        );
+
+      }
+
+    });
+
+  </script>
+
+</body>
+</html>
