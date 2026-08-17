@@ -8,20 +8,16 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; font-family: sans-serif; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
     
     #inicio { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 10000; background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8)), url('fondo.jpg'); background-size: cover; background-position: center; }
     #contenedor-textos { position: absolute; bottom: 15vh; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
     #inicio h1 { color: #fff; font-size: 32px; margin: 0; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     #btn-comenzar { border: 0; padding: 16px 40px; background: #2563eb; color: white; font-size: 18px; font-weight: 700; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
     
-    #btn-flash { position: fixed; top: 20px; left: 20px; z-index: 4999; background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid #fff; border-radius: 50%; width: 44px; height: 44px; font-size: 20px; cursor: pointer; display: none; align-items: center; justify-content: center; }
-    
     #video-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 5000; display: none; background: #000; }
     #video-pantalla { width: 100%; height: 100%; object-fit: cover; }
-    
-    /* El botón original corregido para que responda */
-    #btn-cerrar { position: absolute; top: 20px; right: 20px; z-index: 2147483647; background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid #fff; border-radius: 50%; width: 44px; height: 44px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    #btn-cerrar { position: absolute; top: 20px; right: 20px; z-index: 5001; background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid #fff; border-radius: 50%; width: 44px; height: 44px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
   </style>
 </head>
 <body>
@@ -33,59 +29,60 @@
     </div>
   </div>
 
-  <button id="btn-flash">🔦</button>
-
   <div id="video-container">
-    <button id="btn-cerrar" onclick="cerrar()">✕</button>
+    <button id="btn-cerrar">&times;</button>
     <video id="video-pantalla" playsinline webkit-playsinline loop preload="auto" crossorigin="anonymous"></video>
   </div>
 
-  <a-scene mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" color-space="sRGB" renderer="colorManagement: true; physicallyCorrectLights: true;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+  <a-scene id="escena" mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
     <a-entity id="targets-group"></a-entity>
   </a-scene>
 
   <script>
     const inicio = document.getElementById('inicio');
-    const btnComenzar = document.getElementById('btn-comenzar');
     const container = document.getElementById('video-container');
     const video = document.getElementById('video-pantalla');
-    const btnFlash = document.getElementById('btn-flash');
+    const btnCerrar = document.getElementById('btn-cerrar');
+    const escena = document.getElementById('escena');
     const targetsGroup = document.getElementById('targets-group');
-    const sceneEl = document.querySelector('a-scene');
 
     let videoActual = null;
-    const usuarioGitHub = "r-co95"; 
 
     function obtenerRuta(index) {
       const num = index + 1;
-      let bodega = (num <= 25) ? "videos-libro-1" : "videos-libro-2"; // Simplificado para que no falle
-      return `https://raw.githubusercontent.com/${usuarioGitHub}/${bodega}/main/Cita${String(num).padStart(3, '0')}.mp4`;
+      let bodega = "";
+      if (num <= 25) bodega = "videos-libro-1";
+      else if (num <= 50) bodega = "videos-libro-2";
+      else if (num <= 75) bodega = "videos-libro-3";
+      else bodega = "videos-libro-4";
+      return `https://raw.githubusercontent.com/r-co95/${bodega}/main/Cita${String(num).padStart(3, '0')}.mp4`;
     }
 
     for (let i = 0; i < 100; i++) {
       const el = document.createElement('a-entity');
       el.setAttribute('mindar-image-target', `targetIndex: ${i}`);
-      const rutaVideo = obtenerRuta(i);
-
+      const ruta = obtenerRuta(i);
+      
       el.addEventListener('targetFound', () => {
-        if (videoActual !== rutaVideo) { video.src = rutaVideo; videoActual = rutaVideo; video.load(); }
+        if (videoActual !== ruta) { video.src = ruta; videoActual = ruta; video.load(); }
         container.style.display = 'block';
         video.play();
       });
       targetsGroup.appendChild(el);
     }
 
-    // FUNCIÓN DE CIERRE SIMPLE Y EFECTIVA
-    function cerrar() {
+    // Al cerrar: pausamos video, ocultamos contenedor y reiniciamos el escaneo
+    btnCerrar.addEventListener('click', () => {
       video.pause();
+      video.currentTime = 0;
       container.style.display = 'none';
-    }
+      escena.play(); // Esto obliga a la cámara a volver a buscar
+    });
 
-    btnComenzar.addEventListener('click', async () => {
+    document.getElementById('btn-comenzar').addEventListener('click', () => {
       inicio.style.display = 'none';
-      btnFlash.style.display = 'flex';
-      await sceneEl.systems['mindar-image-system'].start();
+      escena.systems['mindar-image-system'].start();
     });
   </script>
 </body>
