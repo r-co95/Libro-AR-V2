@@ -17,9 +17,10 @@
     #inicio {
       position: fixed; inset: 0; width: 100vw; height: 100vh;
       z-index: 10000;
-      /* BRILLO AJUSTADO AQUÍ: El segundo valor de rgba bajó de 0.7 a 0.4 */
-      background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4)), url('./fondo.jpg');
+      /* Degradado suave y brillo forzado al 150% */
+      background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.2)), url('./fondo.jpg');
       background-size: cover; background-position: center;
+      filter: brightness(1.5); 
     }
 
     #contenedor-textos {
@@ -88,7 +89,6 @@
 
   <script>
     const inicio = document.getElementById('inicio');
-    const btnComenzar = document.getElementById('btn-comenzar');
     const container = document.getElementById('video-container');
     const video = document.getElementById('video-pantalla');
     const btnCerrar = document.getElementById('btn-cerrar');
@@ -99,7 +99,6 @@
     let videoActual = null;
     let flashEncendido = false;
 
-    // Función de rutas a las 4 bodegas
     function obtenerRuta(index) {
         const num = index + 1;
         let bodega = "videos-libro-1";
@@ -135,7 +134,7 @@
       targetsGroup.appendChild(el);
     }
 
-    btnComenzar.addEventListener('click', async () => {
+    document.getElementById('btn-comenzar').addEventListener('click', async () => {
       inicio.style.display = 'none';
       btnFlash.style.display = 'flex';
       video.muted = false;
