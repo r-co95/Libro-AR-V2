@@ -3,21 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Jorge & Astrid - Libro AR</title>
+  <title>Jorge & Astrid</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      overflow: hidden; background: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
     
-    #inicio { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 10000; background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8)), url('fondo.jpg'); background-size: cover; background-position: center; }
-    #contenedor-textos { position: absolute; bottom: 15vh; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 15px; }
-    #inicio h1 { color: #fff; font-size: 32px; margin: 0; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-    #btn-comenzar { border: 0; padding: 16px 40px; background: #2563eb; color: white; font-size: 18px; font-weight: 700; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+    #inicio {
+      position: fixed; inset: 0; width: 100vw; height: 100vh;
+      z-index: 10000;
+      background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7)), url('./fondo.jpg');
+      background-size: cover; background-position: center;
+    }
+
+    #contenedor-textos {
+      position: absolute;
+      bottom: 15vh;
+      width: 100%;
+      display: flex; flex-direction: column; align-items: center; gap: 15px;
+    }
     
-    #video-container { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 5000; display: none; background: #000; }
+    #inicio h1 { color: #fff; font-size: 32px; margin: 0; font-weight: 700; text-align: center; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+    
+    #btn-comenzar {
+      border: 0; padding: 16px 40px; background: #2563eb; color: white;
+      font-size: 18px; font-weight: 700; border-radius: 12px; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+    #btn-comenzar:active { transform: scale(0.97); }
+    
+    #btn-flash {
+      position: fixed; top: 20px; left: 20px; z-index: 4999;
+      background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid #fff;
+      border-radius: 50%; width: 44px; height: 44px; font-size: 20px;
+      cursor: pointer; display: none; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    #video-container {
+      position: fixed; inset: 0; width: 100vw; height: 100vh;
+      z-index: 5000; display: none; background: #000;
+    }
     #video-pantalla { width: 100%; height: 100%; object-fit: cover; }
-    #btn-cerrar { position: absolute; top: 20px; right: 20px; z-index: 5001; background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid #fff; border-radius: 50%; width: 44px; height: 44px; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    #btn-cerrar {
+      position: absolute; top: 20px; right: 20px; z-index: 5001;
+      background: rgba(0, 0, 0, 0.7); color: #fff; border: 1px solid #fff;
+      border-radius: 50%; width: 44px; height: 44px; font-size: 22px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -29,60 +67,119 @@
     </div>
   </div>
 
+  <button id="btn-flash">🔦</button>
+
   <div id="video-container">
     <button id="btn-cerrar">&times;</button>
-    <video id="video-pantalla" playsinline webkit-playsinline loop preload="auto" crossorigin="anonymous"></video>
+    <video id="video-pantalla" playsinline webkit-playsinline loop preload="auto"></video>
   </div>
 
-  <a-scene id="escena" mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes;"
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: true;"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+    
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
     <a-entity id="targets-group"></a-entity>
   </a-scene>
 
   <script>
     const inicio = document.getElementById('inicio');
+    const btnComenzar = document.getElementById('btn-comenzar');
     const container = document.getElementById('video-container');
     const video = document.getElementById('video-pantalla');
     const btnCerrar = document.getElementById('btn-cerrar');
-    const escena = document.getElementById('escena');
+    const btnFlash = document.getElementById('btn-flash');
     const targetsGroup = document.getElementById('targets-group');
+    const sceneEl = document.querySelector('a-scene');
 
     let videoActual = null;
+    let flashEncendido = false;
+
+    const usuarioGitHub = "r-co95";
 
     function obtenerRuta(index) {
       const num = index + 1;
       let bodega = "";
+      
       if (num <= 25) bodega = "videos-libro-1";
       else if (num <= 50) bodega = "videos-libro-2";
       else if (num <= 75) bodega = "videos-libro-3";
       else bodega = "videos-libro-4";
-      return `https://raw.githubusercontent.com/r-co95/${bodega}/main/Cita${String(num).padStart(3, '0')}.mp4`;
+
+      const nombreArchivo = `Cita${String(num).padStart(3, '0')}.mp4`;
+      return `https://raw.githubusercontent.com/${usuarioGitHub}/${bodega}/main/${nombreArchivo}`;
     }
 
     for (let i = 0; i < 100; i++) {
       const el = document.createElement('a-entity');
       el.setAttribute('mindar-image-target', `targetIndex: ${i}`);
-      const ruta = obtenerRuta(i);
-      
+      const rutaVideo = obtenerRuta(i);
+
       el.addEventListener('targetFound', () => {
-        if (videoActual !== ruta) { video.src = ruta; videoActual = ruta; video.load(); }
+        if (videoActual !== rutaVideo) {
+          video.src = rutaVideo;
+          videoActual = rutaVideo;
+        }
+        video.muted = false;
         container.style.display = 'block';
-        video.play();
+        video.play().catch(e => console.log('Error play:', e));
+      });
+
+      el.addEventListener('targetLost', () => {
+        if (videoActual === rutaVideo) {
+          video.pause();
+          container.style.display = 'none';
+        }
       });
       targetsGroup.appendChild(el);
     }
 
-    // Al cerrar: pausamos video, ocultamos contenedor y reiniciamos el escaneo
-    btnCerrar.addEventListener('click', () => {
-      video.pause();
-      video.currentTime = 0;
-      container.style.display = 'none';
-      escena.play(); // Esto obliga a la cámara a volver a buscar
+    btnComenzar.addEventListener('click', async () => {
+      inicio.style.display = 'none';
+      btnFlash.style.display = 'flex';
+      video.muted = false;
+      const mindarSystem = sceneEl.systems['mindar-image-system'];
+      await mindarSystem.start();
     });
 
-    document.getElementById('btn-comenzar').addEventListener('click', () => {
-      inicio.style.display = 'none';
-      escena.systems['mindar-image-system'].start();
+    btnCerrar.addEventListener('click', () => {
+      video.pause();
+      video.currentTime = 0; 
+      videoActual = null;    
+      container.style.display = 'none';
+    });
+
+    btnFlash.addEventListener('click', async () => {
+      try {
+        const videos = document.querySelectorAll('video');
+        let trackCamara = null;
+        
+        videos.forEach(v => {
+          if (v.id !== 'video-pantalla' && v.srcObject) {
+            trackCamara = v.srcObject.getVideoTracks()[0];
+          }
+        });
+
+        if (trackCamara) {
+          const capabilities = trackCamara.getCapabilities();
+          if (!capabilities.torch) {
+            alert('El navegador no permite encender la linterna en este dispositivo.');
+            return;
+          }
+
+          flashEncendido = !flashEncendido;
+          await trackCamara.applyConstraints({
+            advanced: [{ torch: flashEncendido }]
+          });
+
+          btnFlash.style.background = flashEncendido ? '#facc15' : 'rgba(0, 0, 0, 0.7)';
+        }
+      } catch (err) {
+        console.log('Error al acceder al flash:', err);
+      }
     });
   </script>
 </body>
